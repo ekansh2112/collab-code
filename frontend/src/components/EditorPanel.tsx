@@ -7,7 +7,7 @@ export default function EditorPanel({ roomId }: { roomId: string }) {
   const [value, setValue] = useState("");
 
   useEffect(() => {
-    ws.current = new WebSocket(`ws://localhost:3001?room=${roomId}`);
+    ws.current = new WebSocket(`wss://collab-code-uj27.onrender.com?room=${roomId}`);
 
     ws.current.onopen = () => {
       console.log("WS connected in room:", roomId);
