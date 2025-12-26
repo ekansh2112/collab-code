@@ -1,41 +1,45 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import Editor from "@monaco-editor/react";
+import * as Y from 'yjs'
+import { MonacoBinding } from 'y-monaco'
+import { WebrtcProvider } from 'y-webrtc'
+// import { WebsocketProvider } from 'y-websocket'
 
 export default function EditorPanel({ roomId }: { roomId: string }) {
-  const ws = useRef<WebSocket | null>(null);
-  const skipNext = useRef(false);
-  const [value, setValue] = useState("");
+  const ydoc = useRef<Y.Doc>(null);
+  const provider = useRef<WebrtcProvider>(null);
+//   const provider = useRef<WebsocketProvider>(null);
+  const bindingRef = useRef<MonacoBinding>(null);
+  const type = useRef<Y.Text>(null);
 
   useEffect(() => {
-    ws.current = new WebSocket(`wss://collab-code-uj27.onrender.com?room=${roomId}`);
-
-    ws.current.onopen = () => {
-      console.log("WS connected in room:", roomId);
-    };
-
-    ws.current.onmessage = async (event) => {
-      const text = await event.data.text();
-      skipNext.current = true;
-      setValue(text);
-    };
-
-    return () => ws.current?.close();
-  }, [roomId]);
-
-  const handleChange = (text: string) => {
-    if (!skipNext.current) {
-    ws.current?.send(text);
+    ydoc.current = new Y.Doc();
+    provider.current = new WebrtcProvider(roomId, ydoc.current!);
+    // provider.current = new WebsocketProvider("wss://collab-code-uj27.onrender.com", roomId, ydoc.current!);
+    type.current = ydoc.current!.getText("togethercoding")
+    return () => {
+      bindingRef.current?.destroy()
+      provider.current?.disconnect();
+      provider?.current?.destroy()
+      ydoc.current?.destroy()
     }
-    skipNext.current = false;
-    setValue(text);
-  };
+  }, [roomId]);
 
   return (
     <Editor
-      defaultLanguage="javascript"
+    onMount={(editor, monaco) => {
+        const model = monaco.editor.createModel("", "text");
+        editor.setModel(model);
+        provider.current!.on('status', e => console.log('status:', e));
+        bindingRef.current = new MonacoBinding(
+           type.current!,
+           model,
+           new Set([editor]),
+           provider.current!.awareness
+        );
+     }}
+      defaultLanguage="text"
       theme="vs-dark"
-      value={value}
-      onChange={(v) => handleChange(v || "")}
       options={{ minimap: { enabled: false } }}
     />
   );
