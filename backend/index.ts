@@ -1,27 +1,29 @@
-import { WebSocketServer } from "ws";
 import InitializeDBConnection from './config/database.ts';
+import express from "express"
 import logger from "./logger/logger.ts";
-(async () => {
-    logger.info("Starting DB connection...")
+import SetUpWebSocket from './websocket.ts';
+const app=express()
+
+
+async function StartServer(){
+  logger.info("Server started at",8000)
+  logger.info("Starting DB connection...")
     try {
         await InitializeDBConnection();
         logger.info('Database connected successfully');
     } catch (err) {
       logger.error('Failed to connect to database:', err)
     }
-})();
-const wss = new WebSocketServer({ port: 3001 });
+    try{
+       SetUpWebSocket()
+       logger.info("Websocket setup successfully")
 
-wss.on("connection", (ws, request) => {
-  // const url = new URL(request.url,"http://localhost:3001");
-  const url = new URL(request.url,"https://collab-code-uj27.onrender.com");
-  const roomId = url.searchParams.get("room");
-  ws.roomId = roomId;
-  ws.on("message", (data) => {
-    wss.clients.forEach((client) => {
-      if(client !== ws && client.readyState === 1 && roomId && client.roomId === roomId) {
-        client.send(data)
-      }
-    });
-  });
-});
+    }catch(err){
+      logger.error("Error setting up websocket")
+      process.exit(1)
+    }
+}
+
+app.listen(8000,StartServer);
+
+
