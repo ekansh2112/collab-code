@@ -5,9 +5,9 @@ import logger from "./logger/logger.ts";
     logger.info("Starting DB connection...")
     try {
         await InitializeDBConnection();
-        console.log('Database connected successfully');
+        logger.info('Database connected successfully');
     } catch (err) {
-        console.error('Failed to connect to database:', err);
+      logger.error('Failed to connect to database:', err)
     }
 })();
 const wss = new WebSocketServer({ port: 3001 });
