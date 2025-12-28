@@ -1,68 +1,64 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
-import * as Y from 'yjs'
-import { MonacoBinding } from 'y-monaco'
-import { WebsocketProvider } from 'y-websocket'
+import * as Y from "yjs";
+import { MonacoBinding } from "y-monaco";
+import { WebsocketProvider } from "y-websocket";
+import LanguageSelect from "./LanguageSelect";
+import ThemeToggle from "./ThemeToggle";
 
 export default function EditorPanel({ roomId }: { roomId: string }) {
-  const ydoc = useRef<Y.Doc>(null);
-  const provider = useRef<WebsocketProvider>(null);
-  const bindingRef = useRef<MonacoBinding>(null);
-  const type = useRef<Y.Text>(null);
+
+  const [theme, setTheme] = useState("vs-dark");
+  const [lang, setLang] = useState("javascript");
+
+  // ✅ Properly typed refs with initial nulls
+  const ydoc = useRef<Y.Doc | null>(null);
+  const provider = useRef<WebsocketProvider | null>(null);
+  const bindingRef = useRef<MonacoBinding | null>(null);
+  const type = useRef<Y.Text | null>(null);
 
   useEffect(() => {
     ydoc.current = new Y.Doc();
-    // provider.current = new WebsocketProvider("ws://localhost:3001?room=" + roomId, roomId, ydoc.current!);
-    provider.current = new WebsocketProvider("wss://collab-code-uj27.onrender.com?room=" + roomId, roomId, ydoc.current!);
-    type.current = ydoc.current!.getText("togethercoding123")
-    
-    provider.current.on("status", (event) => {
-        console.log("WebSocket status:", event.status);
-      });
-    
+    provider.current = new WebsocketProvider(
+      `wss://collab-code-uj27.onrender.com?room=${roomId}`,
+      roomId,
+      ydoc.current
+    );
+
+    type.current = ydoc.current.getText("togethercoding123");
+
     return () => {
-        console.log("Cleanup WebSocket + Ydoc connection");
-        bindingRef.current?.destroy();
-        provider?.current?.destroy();
-        ydoc.current?.destroy();
-    }
+      bindingRef.current?.destroy();
+      provider.current?.destroy();
+      ydoc.current?.destroy();
+    };
   }, [roomId]);
-
-  useEffect(() => {
-    if (!ydoc.current) return;
-    const update = Y.encodeStateAsUpdate(ydoc.current!);
-    //POST call to backend to save the update
-    console.log("update-------> ", update);
-  }, [roomId]);
-
-  //GET call to update from backend
-//   useEffect(() => {
-//     fetch(`http://localhost:3001/load?roomId=${roomId}`)
-//       .then(res => res.json())
-//       .then(data => {
-//         if (data.encodedUpdate) {
-//           const update = new Uint8Array(data.encodedUpdate);
-//           Y.applyUpdate(ydoc.current, update);
-//         }
-//       });
-//   }, [roomId]);
 
   return (
-    <Editor
-    onMount={(editor, monaco) => {
-        const model = monaco.editor.createModel("", "text");
-        editor.setModel(model);
-        provider.current!.on('status', e => console.log('status:', e));
-        bindingRef.current = new MonacoBinding(
-           type.current!,
-           model,
-           new Set([editor]),
-           provider.current!.awareness
-        );
-     }}
-      defaultLanguage="text"
-      theme="vs-dark"
-      options={{ minimap: { enabled: false } }}
-    />
+    <div className="editor-wrapper">
+      <div className="editor-controls">
+        <LanguageSelect setLang={setLang} />
+        <ThemeToggle setTheme={setTheme} />
+      </div>
+
+      <Editor
+        language={lang}
+        theme={theme}
+        onMount={(editor, monaco) => {
+          if (!provider.current || !type.current) return;
+
+          const model = monaco.editor.createModel("", lang);
+          editor.setModel(model);
+
+          bindingRef.current = new MonacoBinding(
+            type.current,
+            model,
+            new Set([editor]),
+            provider.current.awareness
+          );
+        }}
+        options={{ minimap: { enabled: false } }}
+      />
+    </div>
   );
 }

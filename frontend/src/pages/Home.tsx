@@ -10,8 +10,14 @@ export default function Home() {
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh", justifyContent: "center",
-                  alignItems: "center", flexDirection: "column" }}>
+    <div style={{ 
+        width: "100%", 
+        height: "100%", 
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        flexDirection: "column"
+      }}>
       <h2>Collaborative Code Editor</h2>
       <button onClick={createRoom}>Create Room</button>
     </div>

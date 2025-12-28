@@ -1,14 +1,19 @@
 import { useParams } from "react-router-dom";
 import EditorPanel from "../components/EditorPanel";
+import Navbar from "../components/Navbar";
+import "../styles/layout.css";
 
 export default function Room() {
-  const { roomId } = useParams<{ roomId: string }>();
+  const { roomId } = useParams();
 
   return (
-    <div style={{ height: "100vh" }}>
-      <h3 style={{ color: "#fff", background: "#222", padding: "10px" }}>
-        Room ID: {roomId}
-      </h3>
+    <div style={{ 
+        width: "100%", 
+        height: "100%", 
+        display: "flex",
+        flexDirection: "column"
+      }} className="room-container">
+      <Navbar roomId={roomId} />
       <EditorPanel roomId={roomId!} />
     </div>
   );
