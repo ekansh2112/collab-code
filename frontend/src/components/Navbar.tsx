@@ -1,7 +1,5 @@
-import { useNavigate } from "react-router-dom";
 
 export default function Navbar({ roomId }: { roomId?: string }) {
-  const navigate  = useNavigate();
 
   const shareRoom = () => {
     navigator.clipboard.writeText(window.location.href);
