@@ -1,8 +1,8 @@
 import { WebSocketServer } from "ws";
 import InitializeDBConnection from './config/database.ts';
-
+import logger from "./logger/logger.ts";
 (async () => {
-    console.log('Starting DB connection...');
+    logger.info("Starting DB connection...")
     try {
         await InitializeDBConnection();
         console.log('Database connected successfully');
