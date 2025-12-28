@@ -12,7 +12,7 @@ import DailyRotateFile from 'winston-daily-rotate-file';
 // });
 
 
-const logger = createLogger({
+const logger  = createLogger({
   level: 'info', 
   format: format.combine(
     format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
@@ -30,8 +30,8 @@ const logger = createLogger({
       )
     }),
     // dailyRotateTransport,
-    new transports.File({ filename: 'logs/error.log', level: 'error' }),
-    new transports.File({ filename: 'logs/combined.log' })
+    // new transports.File({ filename: 'logs/error.log', level: 'error' }),
+    // new transports.File({ filename: 'logs/combined.log' })
   ],
   exitOnError: false,
 });
