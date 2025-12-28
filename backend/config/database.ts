@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 async function InitializeDBConnection(): Promise<void>{
     try{
-        await mongoose.connect('mongodb://localhost:27017/collabeditor', {
+        await mongoose.connect('mongodb://localhost:27017/collabcode', {
             useNewUrlParser: true,
             useUnifiedTopology: true,
         } as mongoose.ConnectOptions);
