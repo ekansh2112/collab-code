@@ -12,6 +12,8 @@ type Drawing = {
   type: "line";
   color: string;
   points: { x: number; y: number }[];
+  createdAt: number;
+  opacity: number;
 };
 export default function EditorPanel({ roomId }: { roomId: string }) {
 
@@ -31,36 +33,73 @@ export default function EditorPanel({ roomId }: { roomId: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
 
+  function drawShape(shape: Drawing) {
+    const ctx = canvasRef.current!.getContext("2d")!;
+    if (!shape.points || !shape.points.length) return;
+  
+    // const now = Date.now();
+    // const AGE = now - shape.createdAt;
+    // const FADE = 4000; // total fade animation duration (ms)
+
+    // // Compute opacity: 1 → 0 smoothly
+    // const opacity = Math.max(0, 1 - AGE / FADE);
+
+    // // ✨ Apply glow + fade
+    // ctx.strokeStyle = `rgba(0, 255, 149, ${opacity})`; //replace with shape.color later.
+    // ctx.shadowColor = `rgba(0, 255, 149, ${opacity * 0.8})`;
+    // ctx.shadowBlur = 20;
+    ctx.strokeStyle = shape.color;
+    ctx.beginPath();
+  
+    shape.points.forEach((p, i) => {
+      i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+    });
+  
+    ctx.stroke();
+    
+    // Reset glow settings for safety
+    // ctx.shadowBlur = 0;
+  }
 
   function redraw() {
-    console.log("redraw");
     const canvas = canvasRef.current!;
     const editorEl = editorContainerRef.current!;
-
+    if(!canvas || !editorEl) return;
     if (canvas.width !== editorEl.clientWidth || canvas.height !== editorEl.clientHeight) {
       canvas.width = editorEl.clientWidth;
       canvas.height = editorEl.clientHeight;
     }
 
+    const now = Date.now();
+    const FADE_DURATION = 5000;
 
+    const toRemove: number[] = [];
     
     const ctx = canvas.getContext("2d")!;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     const arr = drawings.current!.toArray();
-    arr.forEach((shape: Drawing) => {
-      ctx.strokeStyle = shape.color;
-      ctx.beginPath();
-      shape.points.forEach((p: { x: number; y: number }, idx: number) => idx === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
-      ctx.stroke();
+    arr.forEach((shape, index) => {
+      const age = now - shape.createdAt;
+
+      if (age >= FADE_DURATION) {
+        toRemove.push(index);
+      } else {
+        drawShape(shape); 
+    }
+    });
+
+    // Delete expired after iteration (reverse prevents index shift issues)
+    toRemove.reverse().forEach(i => drawings.current!.delete(i, 1));
+
+    provider.current?.awareness.getStates().forEach((state) => {
+      if (state.drawing) drawShape(state.drawing);
     });
 
     // Draw active line (local preview)
     if (activeLineRef.current) {
-      ctx.beginPath();
-      activeLineRef.current.points.forEach((p: { x: number; y: number }, i: number) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
-      ctx.stroke();
+      drawShape(activeLineRef.current);
     }
   }
 
@@ -81,6 +120,9 @@ export default function EditorPanel({ roomId }: { roomId: string }) {
 
     drawings.current.observe(() => redraw());
 
+    provider.current.awareness.on("update", () => {
+      redraw();
+    });
 
     return () => {
       bindingRef.current?.destroy();
@@ -92,7 +134,6 @@ export default function EditorPanel({ roomId }: { roomId: string }) {
   const activeLineRef = useRef<Drawing | null>(null);
 
   function initDrawingCanvas() {
-    console.log("initDrawingCanvas");
     const canvas = canvasRef.current!;
     const editorEl = editorContainerRef.current!;
     if(!canvas || !editorEl) return;
@@ -105,34 +146,45 @@ export default function EditorPanel({ roomId }: { roomId: string }) {
     ctx.strokeStyle = "#00ff95";
 
     canvas.onmousedown = (e) => {
-      console.log("onmousedown",drawModeRef.current);
       if (!drawModeRef.current) return;
       resizeCanvas(); // ensure correct size before drawing
       activeLineRef.current = {
         id: uuid(),
         type: "line",
-        color: "#00ff95",
+        //color: glowing red color like neon
+        color: "#ff0000",
         points: [{ x: e.offsetX, y: e.offsetY }],
+        createdAt: Date.now(),
+        opacity: 1,
       };
+      provider.current!.awareness.setLocalStateField("drawing", activeLineRef.current);
     };
 
     canvas.onmousemove = (e) => {
-      console.log("onmousemove",activeLineRef.current);
       if (!activeLineRef.current) return;
-      activeLineRef.current.points.push({ x: e.offsetX, y: e.offsetY });
+      const point = { x: e.offsetX, y: e.offsetY };
+      activeLineRef.current.points.push(point);
+
+      // Push just the new point to Yjs
+      drawings.current!.push([{
+        ...activeLineRef.current,
+        points: [point], // Only latest point
+      }]);
+
       redraw();
+
+      provider.current!.awareness.setLocalStateField("drawing", activeLineRef.current);
     };
 
     canvas.onmouseup = () => {
-      console.log("onmouseup",activeLineRef.current);
       if (!activeLineRef.current) return;
       drawings.current!.push([activeLineRef.current]);
       activeLineRef.current = null;
+      provider.current!.awareness.setLocalStateField("drawing", activeLineRef.current);
     };
   }
 
   function resizeCanvas() {
-    console.log("resizeCanvas");
     const canvas = canvasRef.current;
     const editorEl = editorContainerRef.current;
     if (!canvas || !editorEl) return;
