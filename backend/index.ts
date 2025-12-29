@@ -1,29 +1,28 @@
-import InitializeDBConnection from './config/database.ts';
-import express from "express"
+import express from "express";
+import InitializeDBConnection from "./config/database.ts";
 import logger from "./logger/logger.ts";
-import SetUpWebSocket from './websocket.ts';
-const app=express()
+import SetUpWebSocket from "./websocket.ts";
 
+const app = express();
+const PORT = 8000;
 
-async function StartServer(){
-  logger.info("Server started at",8000)
-  logger.info("Starting DB connection...")
-    try {
-        await InitializeDBConnection();
-        logger.info('Database connected successfully');
-    } catch (err) {
-      logger.error('Failed to connect to database:', err)
-    }
-    try{
-       SetUpWebSocket()
-       logger.info("Websocket setup successfully")
+async function startServer() {
+  try {
+    logger.info("Starting database connection...");
+    await InitializeDBConnection();
+    logger.info("Database connected successfully");
 
-    }catch(err){
-      logger.error("Error setting up websocket")
-      process.exit(1)
-    }
+    const server = app.listen(PORT, () => {
+      logger.info(`Server running on port ${PORT}`);
+    });
+
+    SetUpWebSocket();
+    logger.info("WebSocket setup successfully");
+
+  } catch (err) {
+    logger.error("Server startup failed", err);
+    process.exit(1);
+  }
 }
 
-app.listen(8000,StartServer);
-
-
+startServer();
