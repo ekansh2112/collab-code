@@ -1,5 +1,15 @@
 import { WebSocketServer } from "ws";
-
+import InitializeDBConnection from './config/database.ts';
+import logger from "./logger/logger.ts";
+(async () => {
+    logger.info("Starting DB connection...")
+    try {
+        await InitializeDBConnection();
+        logger.info('Database connected successfully');
+    } catch (err) {
+      logger.error('Failed to connect to database:', err)
+    }
+})();
 const wss = new WebSocketServer({ port: 3001 });
 
 wss.on("connection", (ws, request) => {

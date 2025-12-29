@@ -13,10 +13,19 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^5.2.1",
+    "mongoose": "^9.0.2",
+    "winston": "^3.19.0",
+    "winston-daily-rotate-file": "^5.0.0",
     "ws": "^8.18.3",
     "y-protocols": "^1.0.7",
     "y-websocket": "^3.0.0",
     "y-websocket-server": "^1.0.2",
     "yjs": "^13.6.28"
+  },
+  "devDependencies": {
+    "@types/mongoose": "^5.11.96",
+    "@types/ws": "^8.18.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   }
 }
