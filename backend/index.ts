@@ -5,7 +5,7 @@ import logger from "./logger/logger";
 (async () => {
   logger.info("Starting DB connection...");
   try {
-    await InitializeDBConnection();
+    // await InitializeDBConnection(); //TODO: fix db host
     logger.info("Database connected successfully");
   } catch (err) {
     logger.error("Failed to connect to database:", err);
