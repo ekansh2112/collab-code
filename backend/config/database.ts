@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import logger from '../logger/logger.ts';
+import logger from '../logger/logger';
 async function InitializeDBConnection(): Promise<void>{
     try{
          await mongoose.connect('mongodb://localhost:27017/collabcode');

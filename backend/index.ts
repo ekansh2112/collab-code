@@ -1,26 +1,35 @@
-import { WebSocketServer } from "ws";
-import InitializeDBConnection from './config/database.ts';
-import logger from "./logger/logger.ts";
+import { WebSocket, WebSocketServer } from "ws";
+import InitializeDBConnection from "./config/database";
+import logger from "./logger/logger";
+
 (async () => {
-    logger.info("Starting DB connection...")
-    try {
-        await InitializeDBConnection();
-        logger.info('Database connected successfully');
-    } catch (err) {
-      logger.error('Failed to connect to database:', err)
-    }
+  logger.info("Starting DB connection...");
+  try {
+    await InitializeDBConnection();
+    logger.info("Database connected successfully");
+  } catch (err) {
+    logger.error("Failed to connect to database:", err);
+  }
 })();
+
 const wss = new WebSocketServer({ port: 3001 });
 
-wss.on("connection", (ws, request) => {
-  // const url = new URL(request.url,"http://localhost:3001");
-  const url = new URL(request.url,"https://collab-code-uj27.onrender.com");
-  const roomId = url.searchParams.get("room");
+wss.on("connection", (ws: WebSocket, request: Request) => {
+  const urlString = request.url ?? "/";
+  const url = new URL(urlString, "https://collab-code-uj27.onrender.com");
+  const roomId = url.searchParams.get("room") ?? undefined;
+
   ws.roomId = roomId;
+
   ws.on("message", (data) => {
-    wss.clients.forEach((client) => {
-      if(client !== ws && client.readyState === 1 && roomId && client.roomId === roomId) {
-        client.send(data)
+    wss.clients.forEach((client: WebSocket) => {
+      if (
+        client !== ws &&
+        client.readyState === 1 &&
+        roomId &&
+        client.roomId === roomId
+      ) {
+        client.send(data);
       }
     });
   });
