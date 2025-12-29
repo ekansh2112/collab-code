@@ -2,9 +2,10 @@ import express from "express";
 import InitializeDBConnection from "./config/database.ts";
 import logger from "./logger/logger.ts";
 import SetUpWebSocket from "./websocket.ts";
+import "dotenv/config";
 
 const app = express();
-const PORT = 8000;
+const PORT = process.env.PORT || 8000;
 
 async function startServer() {
   try {
