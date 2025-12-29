@@ -7,6 +7,12 @@ import LanguageSelect from "./LanguageSelect";
 import ThemeToggle from "./ThemeToggle";
 import { v4 as uuid } from "uuid";
 
+type Drawing = {
+  id: string;
+  type: "line";
+  color: string;
+  points: { x: number; y: number }[];
+};
 export default function EditorPanel({ roomId }: { roomId: string }) {
 
   const [theme, setTheme] = useState("vs-dark");
@@ -20,10 +26,43 @@ export default function EditorPanel({ roomId }: { roomId: string }) {
   const bindingRef = useRef<MonacoBinding | null>(null);
   const type = useRef<Y.Text | null>(null);
 
-  const drawings = useRef<Y.Array<any> | null>(null);
+  const drawings = useRef<Y.Array<Drawing> | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
+
+
+  function redraw() {
+    console.log("redraw");
+    const canvas = canvasRef.current!;
+    const editorEl = editorContainerRef.current!;
+
+    if (canvas.width !== editorEl.clientWidth || canvas.height !== editorEl.clientHeight) {
+      canvas.width = editorEl.clientWidth;
+      canvas.height = editorEl.clientHeight;
+    }
+
+
+    
+    const ctx = canvas.getContext("2d")!;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const arr = drawings.current!.toArray();
+    arr.forEach((shape: Drawing) => {
+      ctx.strokeStyle = shape.color;
+      ctx.beginPath();
+      shape.points.forEach((p: { x: number; y: number }, idx: number) => idx === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      ctx.stroke();
+    });
+
+    // Draw active line (local preview)
+    if (activeLineRef.current) {
+      ctx.beginPath();
+      activeLineRef.current.points.forEach((p: { x: number; y: number }, i: number) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      ctx.stroke();
+    }
+  }
 
   useEffect(() => {
     drawModeRef.current = drawMode;
@@ -50,7 +89,7 @@ export default function EditorPanel({ roomId }: { roomId: string }) {
     };
   }, [roomId]);
 
-  const activeLineRef = useRef<any>(null);
+  const activeLineRef = useRef<Drawing | null>(null);
 
   function initDrawingCanvas() {
     console.log("initDrawingCanvas");
@@ -104,41 +143,7 @@ export default function EditorPanel({ roomId }: { roomId: string }) {
     redraw();
   }
 
-  function redraw() {
-    console.log("redraw");
-    const canvas = canvasRef.current!;
-    const editorEl = editorContainerRef.current!;
-
-    if (canvas.width !== editorEl.clientWidth || canvas.height !== editorEl.clientHeight) {
-      canvas.width = editorEl.clientWidth;
-      canvas.height = editorEl.clientHeight;
-    }
-
-
-    
-    const ctx = canvas.getContext("2d")!;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const arr = drawings.current!.toArray();
-    arr.forEach((shape) => {
-      ctx.strokeStyle = shape.color;
-      ctx.beginPath();
-      shape.points.forEach((p: any, idx: number) => {
-        idx === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
-      });
-      ctx.stroke();
-    });
-
-    // Draw active line (local preview)
-    if (activeLineRef.current) {
-      ctx.beginPath();
-      activeLineRef.current.points.forEach((p: any, i: number) => {
-        i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
-      });
-      ctx.stroke();
-    }
-  }
+  
 
 
   return (
@@ -187,7 +192,7 @@ export default function EditorPanel({ roomId }: { roomId: string }) {
             top: 0,
             left: 0,
             zIndex: drawMode ? 10 : -10, // hide canvas when not drawing,
-            background: drawMode ? "rgba(1,255,0,0.1)" : "transparent",
+            background: "transparent",
             cursor: drawMode ? "crosshair" : "default",
           }}
         />
