@@ -1,3 +1,4 @@
+import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 
 export default function Navbar({ roomId }: { roomId?: string }) {
 
@@ -5,7 +6,13 @@ export default function Navbar({ roomId }: { roomId?: string }) {
     navigator.clipboard.writeText(window.location.href);
     alert("URL copied! Share with your friend");
   };
-
+  
+  const handleSuccess = (credentialResponse: CredentialResponse) => {
+    console.log(credentialResponse);
+  }
+  const handleError = () => {
+    console.log('Login Failed');
+  }
   return (
     <div className="navbar">
       <h3 className="logo">Collab Code</h3>
@@ -18,7 +25,7 @@ export default function Navbar({ roomId }: { roomId?: string }) {
           <option disabled>Room list coming soon…</option>
         </select>
 
-        <button className="login-btn">Login / Signup</button>
+        <button className="login-btn"><GoogleLogin onSuccess={handleSuccess} onError={handleError}/></button>
       </div>
     </div>
   );
